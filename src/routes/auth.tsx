@@ -30,12 +30,18 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  const authConfigured = Boolean(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const p = schema.safeParse({ email, password });
     if (!p.success) { toast.error(p.error.issues[0]?.message ?? "Dados inválidos"); return; }
+    if (!authConfigured) {
+      toast.error("A conexão de autenticação ainda não foi configurada na Vercel.");
+      return;
+    }
     setBusy(true);
+    try {
     if (mode === "in") {
       const { error } = await supabase.auth.signInWithPassword(p.data);
       setBusy(false);
@@ -48,6 +54,10 @@ function AuthPage() {
       if (data.session) navigate({ to: "/admin" });
       else toast.success("Conta criada! Confirme pelo link enviado ao seu e-mail e depois entre.");
     }
+    } catch (error) {
+      setBusy(false);
+      toast.error(error instanceof Error ? error.message : "Falha ao conectar ao serviço de autenticação.");
+    }
   }
 
   return (
@@ -58,9 +68,16 @@ function AuthPage() {
           <h1 className="mt-2 text-2xl font-extrabold">{mode === "in" ? "Entrar no painel" : "Criar conta"}</h1>
           <p className="text-sm text-muted-foreground">Acesso exclusivo da equipe. A primeira conta criada recebe permissão de administrador.</p>
         </div>
+        {!authConfigured && (
+          <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+            <strong>Painel ainda não conectado ao banco de dados.</strong>
+            <p className="mt-2">A Vercel precisa das variáveis VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY (para login) e das correspondentes variáveis do servidor. O catálogo demonstrativo continua disponível, mas o acesso administrativo exige a conexão e uma conta autorizada.</p>
+            <p className="mt-2">Configure as credenciais diretamente em Vercel → Projeto → Settings → Environment Variables e publique novamente. Não coloque chaves privadas no GitHub.</p>
+          </div>
+        )}
         <div className="space-y-1"><Label htmlFor="email">E-mail</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></div>
         <div className="space-y-1"><Label htmlFor="pw">Senha</Label><Input id="pw" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "in" ? "current-password" : "new-password"} /></div>
-        <Button type="submit" className="w-full" disabled={busy}>{mode === "in" ? "Entrar" : "Criar conta"}</Button>
+        <Button type="submit" className="w-full" disabled={busy || !authConfigured}>{mode === "in" ? "Entrar" : "Criar conta"}</Button>
         <button type="button" className="w-full text-sm text-muted-foreground underline" onClick={() => setMode(mode === "in" ? "up" : "in")}>
           {mode === "in" ? "Ainda não tem conta? Criar" : "Já tem conta? Entrar"}
         </button>
