@@ -4,10 +4,11 @@ import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { computeQuote, type DiscountTier, type PriceTier, type PricingProduct } from "./pricing";
 import { fallbackCatalog } from "./fallback-catalog";
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "./supabase-public-config";
 
 function publicClient() {
-  const url = process.env["SUPABASE_URL"]!;
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+  const url = process.env["SUPABASE_URL"] || PUBLIC_SUPABASE_URL;
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"] || PUBLIC_SUPABASE_KEY;
   return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
     global: {
@@ -34,7 +35,7 @@ export type CatalogProduct = PricingProduct & {
 export const getCatalog = createServerFn({ method: "GET" }).handler(async () => {
   // A publicação independente pode ainda não ter as chaves do Supabase.
   // Não derrubar a vitrine: oferecer somente referências, sem vendas ativas.
-  if (!process.env["SUPABASE_URL"] || !process.env["SUPABASE_PUBLISHABLE_KEY"]) {
+  if (!(process.env["SUPABASE_URL"] || PUBLIC_SUPABASE_URL) || !(process.env["SUPABASE_PUBLISHABLE_KEY"] || PUBLIC_SUPABASE_KEY)) {
     console.warn("FinaSub: Supabase não configurado; vitrine de demonstração ativada.");
     return fallbackCatalog;
   }

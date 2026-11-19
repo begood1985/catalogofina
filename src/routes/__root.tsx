@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CartProvider } from "../lib/cart";
 import { Toaster } from "../components/ui/sonner";
 import { supabase } from "../integrations/supabase/client";
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "../lib/supabase-public-config";
 
 function NotFoundComponent() {
   return (
@@ -130,7 +131,7 @@ function RootComponent() {
     // A vitrine pública precisa funcionar mesmo quando a conexão Supabase
     // ainda não foi configurada no deploy independente da Vercel.
     // O client do Supabase é lazy e lança erro ao acessar .auth sem env.
-    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) {
+    if (!(import.meta.env.VITE_SUPABASE_URL || PUBLIC_SUPABASE_URL) || !(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || PUBLIC_SUPABASE_KEY)) {
       return;
     }
     try {
