@@ -45,6 +45,10 @@ function CartPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (data.offlineMode) {
+      toast.error("Orçamentos indisponíveis enquanto o catálogo estiver em demonstração.");
+      return;
+    }
     const payload = { ...form, document: form.document || undefined, notes: form.notes || undefined, items: valid };
     const parsed = quoteSchema.safeParse(payload);
     if (!parsed.success) {
@@ -77,6 +81,7 @@ function CartPage() {
       <SiteHeader brand={data.settings.brand_name} />
       <main className="mx-auto max-w-7xl px-4 py-8">
         <h1 className="text-3xl font-extrabold md:text-4xl">Seu orçamento</h1>
+        {data.offlineMode && <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">Modo de demonstração: não envie pedidos por esta página. É necessário ativar a conexão com o Supabase.</p>}
         {valid.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-dashed border-border bg-card p-12 text-center">
             <ShoppingBag className="mx-auto h-10 w-10 text-muted-foreground" />

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { computeQuote, type DiscountTier, type PriceTier, type PricingProduct } from "./pricing";
+import { fallbackCatalog } from "./fallback-catalog";
 
 function publicClient() {
   const url = process.env["SUPABASE_URL"]!;
@@ -31,6 +32,13 @@ export type CatalogProduct = PricingProduct & {
 };
 
 export const getCatalog = createServerFn({ method: "GET" }).handler(async () => {
+  // A publicação independente pode ainda não ter as chaves do Supabase.
+  // Não derrubar a vitrine: oferecer somente referências, sem vendas ativas.
+  if (!process.env["SUPABASE_URL"] || !process.env["SUPABASE_PUBLISHABLE_KEY"]) {
+    console.warn("FinaSub: Supabase não configurado; vitrine de demonstração ativada.");
+    return fallbackCatalog;
+  }
+  try {
   const sb = publicClient();
   const [products, categories, tiers, settings, priceTiers] = await Promise.all([
     sb
@@ -56,6 +64,7 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
     priceTiers: (priceTiers.data ?? []).map((t) => ({ ...t, unit_price: Number(t.unit_price) })) as PriceTier[],
     categories: categories.data ?? [],
     tiers: (tiers.data ?? []).map((t) => ({ ...t, percent: Number(t.percent) })) as DiscountTier[],
+    offlineMode: false,
     settings: {
       brand_name: settings.data?.brand_name ?? "FinaSub",
       tagline: settings.data?.tagline ?? "",
@@ -64,6 +73,10 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
       payment_methods: settings.data?.payment_methods ?? [],
     },
   };
+  } catch (error) {
+    console.error("FinaSub: não foi possível consultar o Supabase; usando catálogo ilustrativo.", error);
+    return fallbackCatalog;
+  }
 });
 
 export const quoteSchema = z.object({

@@ -93,6 +93,11 @@ function Catalog() {
       </div>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
+        {data.offlineMode && (
+          <div role="status" className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+            <strong>Catálogo em demonstração.</strong> Fotos ilustrativas, produtos sob consulta e orçamentos temporariamente indisponíveis até a conexão com o banco de dados.
+          </div>
+        )}
         {data.products.length === 0 ? (
           <EmptyCatalog />
         ) : filtered.length === 0 ? (
