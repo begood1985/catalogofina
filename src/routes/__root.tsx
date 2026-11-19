@@ -16,7 +16,7 @@ import { CartProvider } from "../lib/cart";
 import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
 import { Toaster } from "../components/ui/sonner";
 import { supabase } from "../integrations/supabase/client";
-import { initMetaPixel, trackPageView } from "../lib/meta-pixel";
+import { MetaTracking } from "../components/MetaTracking";
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "../lib/supabase-public-config";
 
 function NotFoundComponent() {
@@ -130,14 +130,6 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   useEffect(() => {
-    initMetaPixel();
-    trackPageView();
-    return router.subscribe("onResolved", (event) => {
-      if (event.pathChanged) trackPageView();
-    });
-  }, [router]);
-
-  useEffect(() => {
     // A vitrine pública precisa funcionar mesmo quando a conexão Supabase
     // ainda não foi configurada no deploy independente da Vercel.
     // O client do Supabase é lazy e lança erro ao acessar .auth sem env.
@@ -163,6 +155,7 @@ function RootComponent() {
         <Outlet />
         <Toaster richColors position="top-center" />
         <FloatingWhatsApp />
+        <MetaTracking />
       </CartProvider>
     </QueryClientProvider>
   );
