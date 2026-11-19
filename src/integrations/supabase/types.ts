@@ -337,6 +337,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      finasub_submit_quote: {
+        Args: { payload: Json }
+        Returns: Json
+      }
+      finasub_get_quote: {
+        Args: { quote_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
