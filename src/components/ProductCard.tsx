@@ -5,28 +5,39 @@ import { money, kg } from "@/lib/format";
 import { useCart } from "@/lib/cart";
 import { nextTier, priceLine, type DiscountTier, type PriceTier } from "@/lib/pricing";
 import type { CatalogProduct } from "@/lib/catalog.functions";
+import { productSlug, referencePhotos } from "@/lib/reference-photos";
 
-const illustrationPath = (name: string) => "/catalogo/ilustracoes/" + name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + ".svg";
+const illustrationPath = (name: string) => "/catalogo/ilustracoes/" + productSlug(name) + ".svg";
 
 function ProductImage({ name, url }: { name: string; url: string | null }) {
   // Use the registered product photo when it loads; fall back to a local
   // illustration when the photo is missing, blocked or returns 404.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const [illustrationFailed, setIllustrationFailed] = useState(false);
-  const remoteUrl = url && failedUrl !== url ? url : null;
+  const reference = referencePhotos[productSlug(name)];
+  const preferredUrl = url || reference?.url || null;
+  const remoteUrl = preferredUrl && failedUrl !== preferredUrl ? preferredUrl : null;
   const illustration = illustrationPath(name);
   return (
     <div className="relative h-full w-full">
       {remoteUrl ? (
-        <img
-          key={remoteUrl}
-          src={remoteUrl}
-          alt={name}
-          loading="lazy"
-          decoding="async"
-          className="h-full w-full object-contain p-2"
-          onError={() => setFailedUrl(remoteUrl)}
-        />
+        <>
+          <img
+            key={remoteUrl}
+            src={remoteUrl}
+            alt={reference && !url ? `Fotografia de referência: ${name}` : name}
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            className="h-full w-full object-contain p-2"
+            onError={() => setFailedUrl(remoteUrl)}
+          />
+          {reference && !url && (
+            <a href={reference.source} target="_blank" rel="noopener noreferrer" className="absolute bottom-2 right-2 rounded bg-white/95 px-2 py-1 text-[10px] text-slate-700 underline">
+              {reference.approx ? "Foto de referência · fonte" : "Foto do modelo · fonte"}
+            </a>
+          )}
+        </>
       ) : (
         <>
           {illustrationFailed ? (
