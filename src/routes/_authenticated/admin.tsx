@@ -51,7 +51,7 @@ function AdminPage() {
     <div className="min-h-screen">
       <header className="bg-ink text-primary-foreground">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <div><p className="text-xs uppercase tracking-widest opacity-75">Painel</p><h1 className="text-xl font-extrabold">FinaSub Admin</h1></div>
+          <div className="flex items-center gap-3"><span className="rounded-lg bg-white p-1"><img src="/brand/finasub-symbol.svg" alt="" className="h-9 w-9" /></span><div><p className="text-xs uppercase tracking-widest opacity-75">Painel</p><h1 className="text-xl font-extrabold">FinaSub Admin</h1></div></div>
           <div className="flex items-center gap-3 text-sm">
             <Link to="/" className="underline opacity-90">Ver catálogo</Link>
             <button onClick={logout} className="inline-flex items-center gap-1 opacity-90"><LogOut className="h-4 w-4" /> Sair</button>
