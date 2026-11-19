@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Pencil, Plus, Trash2, Upload, ImageOff } from "lucide-react";
+import { Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { productSlug, referencePhotos } from "@/lib/reference-photos";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,7 @@ export function ProductsAdmin() {
   }
 
   const f = editing?.form;
+  const suggestedPhoto = f ? referencePhotos[productSlug(f.name)] : undefined;
   const set = (k: keyof Form, v: unknown) => setEditing((cur) => (cur ? { ...cur, form: { ...cur.form, [k]: v } } : cur));
 
   return (
@@ -117,7 +119,7 @@ export function ProductsAdmin() {
               {list.map((p) => (
                 <tr key={p.id} className="border-t border-border">
                   <td className="p-3"><div className="flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted">{p.image_url ? <img src={p.image_url} alt="" className="h-full w-full object-cover" /> : <ImageOff className="m-3 h-4 w-4 text-muted-foreground" />}</div>
+                    <AdminPhoto name={p.name} url={p.image_url} small />
                     <div><p className="font-mono text-xs text-muted-foreground">{p.sku}{p.external_ref && <span className="ml-2 opacity-70">ref. ext.: {p.external_ref}</span>}</p><p className="font-medium">{p.name}</p>{p.needs_review && <span className="text-xs font-semibold text-accent">Rascunho / verificar</span>}</div>
                   </div></td>
                   <td className="p-3">{p.category_id ? catName.get(p.category_id) : "—"}</td>
@@ -160,7 +162,7 @@ export function ProductsAdmin() {
               <Fld label="Estoque (un)"><Input type="number" min={0} value={f.stock} onChange={(e) => set("stock", e.target.value)} placeholder="Vazio = não controlar" /></Fld>
               <Fld label="Foto" wide>
                 <div className="flex items-center gap-3">
-                  <div className="h-16 w-16 overflow-hidden rounded bg-muted">{f.image_url && <img src={f.image_url} alt="" className="h-full w-full object-cover" />}</div>
+                  <AdminPhoto name={f.name} url={f.image_url} />
                   <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input px-3 py-2 text-sm">
                     <Upload className="h-4 w-4" /> {uploading ? "Enviando…" : "Enviar imagem"}
                     <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
@@ -168,6 +170,19 @@ export function ProductsAdmin() {
                   {f.image_url && <Button variant="ghost" size="sm" onClick={() => set("image_url", null)}>Remover</Button>}
                 </div>
                 <Input className="mt-2" placeholder="ou cole uma URL https:// de imagem autorizada" value={f.image_url ?? ""} onChange={(e) => set("image_url", e.target.value || null)} />
+                {suggestedPhoto && (
+                  <div className="mt-2 space-y-2 rounded-lg border border-border bg-muted/40 p-3 text-xs">
+                    <p className="font-semibold">Foto de referência encontrada no catálogo {suggestedPhoto.approx ? "(modelo semelhante; conferir)" : "(modelo de referência)"}</p>
+                    <p className="break-all select-all text-muted-foreground">{suggestedPhoto.url}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" size="sm" variant="outline" onClick={() => set("image_url", suggestedPhoto.url)}>
+                        Usar esta URL no cadastro
+                      </Button>
+                      <a href={suggestedPhoto.source} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-primary underline">Ver fonte da imagem</a>
+                    </div>
+                    <p className="text-muted-foreground">Esta imagem vem de outro site. Confirme a correspondência do modelo e a autorização comercial antes de salvar.</p>
+                  </div>
+                )}
               </Fld>
               <label className="flex items-center gap-2 text-sm"><Switch checked={f.active} onCheckedChange={(v) => set("active", v)} /> Visível no catálogo</label>
               <label className="flex items-center gap-2 text-sm"><Switch checked={f.needs_review} onCheckedChange={(v) => set("needs_review", v)} /> Rascunho / verificar</label>
@@ -188,4 +203,24 @@ export function ProductsAdmin() {
 
 function Fld({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
   return <div className={`space-y-1 ${wide ? "sm:col-span-2" : ""}`}><Label>{label}</Label>{children}</div>;
+}
+function AdminPhoto({ name, url, small = false }: { name: string; url: string | null; small?: boolean }) {
+  const [failed, setFailed] = useState<string | null>(null);
+  const preferred = url || referencePhotos[productSlug(name)]?.url || null;
+  const image = preferred && failed !== preferred
+    ? preferred
+    : "/catalogo/ilustracoes/" + productSlug(name) + ".svg";
+  return (
+    <div className={small ? "h-10 w-10 shrink-0 overflow-hidden rounded bg-muted" : "h-16 w-16 shrink-0 overflow-hidden rounded bg-muted"}>
+      <img
+        key={image}
+        src={image}
+        alt={name}
+        loading="lazy"
+        className="h-full w-full object-contain"
+        referrerPolicy="no-referrer"
+        onError={() => setFailed(preferred)}
+      />
+    </div>
+  );
 }
