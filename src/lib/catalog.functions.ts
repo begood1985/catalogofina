@@ -114,107 +114,32 @@ function makeCode() {
 export const submitQuote = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => quoteSchema.parse(input))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const ids = [...new Set(data.items.map((i) => i.productId))];
-    const [prodRes, tierRes, setRes, ptRes] = await Promise.all([
-      supabaseAdmin
-        .from("products")
-        .select("id, sku, name, retail_price, wholesale_price, wholesale_min_qty, units_per_box, weight_kg, stock")
-        .in("id", ids)
-        .eq("active", true),
-      supabaseAdmin.from("discount_tiers").select("product_id, min_qty, percent"),
-      supabaseAdmin.from("store_settings").select("min_order_value, payment_methods").eq("id", 1).single(),
-      supabaseAdmin.from("price_tiers").select("product_id, min_qty, unit_price").in("product_id", ids),
-    ]);
-    if (prodRes.error || tierRes.error || setRes.error || ptRes.error) throw new Error("Falha ao consultar o catálogo");
-    const products = prodRes.data.map((p) => ({
-      ...p,
-      retail_price: p.retail_price == null ? null : Number(p.retail_price),
-      wholesale_price: p.wholesale_price == null ? null : Number(p.wholesale_price),
-      weight_kg: p.weight_kg == null ? null : Number(p.weight_kg),
-    }));
-    if (products.length !== ids.length) throw new Error("Algum item não está mais disponível. Revise o carrinho.");
-    const methods = setRes.data.payment_methods ?? [];
-    if (methods.length && !methods.includes(data.paymentMethod)) throw new Error("Forma de pagamento inválida");
-
-    const merged = new Map<string, number>();
-    for (const i of data.items) merged.set(i.productId, (merged.get(i.productId) ?? 0) + i.boxes);
-    const items = [...merged].map(([productId, boxes]) => ({ productId, boxes }));
-    const tiers = tierRes.data.map((t) => ({ ...t, percent: Number(t.percent) }));
-    const priceTiers = ptRes.data.map((t) => ({ ...t, unit_price: Number(t.unit_price) }));
-    const q = computeQuote(items, products, tiers, Number(setRes.data.min_order_value), priceTiers);
-
-    for (const l of q.lines) {
-      const p = products.find((x) => x.id === l.productId)!;
-      if (p.stock != null && l.quantity > p.stock)
-        throw new Error(`Estoque insuficiente para ${p.sku} (disponível: ${p.stock})`);
+    // A função SECURITY DEFINER valida estoque, faixas, descontos, valor mínimo
+    // e grava pedido + itens numa única transação. Não expõe service_role.
+    const { data: result, error } = await publicClient().rpc("finasub_submit_quote", {
+      payload: data,
+    });
+    if (error) throw new Error(error.message || "Não foi possível registrar o orçamento");
+    if (!result || typeof result !== "object" || !("id" in result)) {
+      throw new Error("Resposta inválida do registro de orçamento");
     }
-    if (!q.meetsMinimum)
-      throw new Error(`Pedido mínimo não atingido. Faltam R$ ${q.missingForMinimum.toFixed(2).replace(".", ",")}`);
-
-    let order: { id: string; code: string } | null = null;
-    for (let attempt = 0; attempt < 4 && !order; attempt++) {
-      const { data: row, error } = await supabaseAdmin
-        .from("orders")
-        .insert({
-          code: makeCode(),
-          customer_name: data.customerName,
-          whatsapp: data.whatsapp.replace(/\D/g, ""),
-          document: data.document ? data.document.replace(/\D/g, "") : null,
-          payment_method: data.paymentMethod,
-          notes: data.notes || null,
-          subtotal: q.subtotal,
-          discount_total: q.discountTotal,
-          total: q.total,
-          total_units: q.totalUnits,
-          total_boxes: q.totalBoxes,
-          total_weight_kg: q.totalWeightKg,
-          has_unpriced_items: q.hasUnpriced,
-        })
-        .select("id, code")
-        .single();
-      if (!error) order = row;
-      else if (error.code !== "23505") throw new Error("Não foi possível salvar o orçamento");
-    }
-    if (!order) throw new Error("Não foi possível gerar o código do orçamento");
-
-    const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(
-      q.lines.map((l) => {
-        const p = products.find((x) => x.id === l.productId)!;
-        return {
-          order_id: order!.id,
-          product_id: p.id,
-          sku: p.sku,
-          name: p.name,
-          quantity: l.quantity,
-          boxes: l.boxes,
-          unit_price: l.unitPrice,
-          discount_percent: l.discountPercent,
-          line_total: l.lineTotal,
-          weight_kg: l.weightKg,
-          price_on_request: l.priceOnRequest,
-        };
-      }),
-    );
-    if (itemsErr) {
-      await supabaseAdmin.from("orders").delete().eq("id", order.id);
-      throw new Error("Não foi possível salvar os itens do orçamento");
-    }
-    return order;
+    return result as { id: string; code: string };
   });
 
 // Readable by anyone holding the unguessable order UUID (the customer's success link).
 export const getQuote = createServerFn({ method: "GET" })
   .inputValidator((input: { id: string }) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: order } = await supabaseAdmin
-      .from("orders")
-      .select(
-        "id, code, customer_name, payment_method, notes, subtotal, discount_total, total, total_units, total_boxes, total_weight_kg, created_at, has_unpriced_items, order_items(sku, name, quantity, boxes, unit_price, discount_percent, line_total, price_on_request)",
-      )
-      .eq("id", data.id)
-      .maybeSingle();
-    const { data: s } = await supabaseAdmin.from("store_settings").select("brand_name, whatsapp_phone").eq("id", 1).single();
-    return { order, brandName: s?.brand_name ?? "FinaSub", whatsapp: FINASUB_WHATSAPP };
+    // O UUID é imprevisível; retorna apenas um orçamento individual.
+    const { data: result, error } = await publicClient().rpc("finasub_get_quote", {
+      quote_id: data.id,
+    });
+    if (error) throw new Error("Não foi possível consultar o orçamento");
+    return result as {
+      order: (Database["public"]["Tables"]["orders"]["Row"] & {
+        order_items: Database["public"]["Tables"]["order_items"]["Row"][];
+      }) | null;
+      brandName: string;
+      whatsapp: string;
+    };
   });
