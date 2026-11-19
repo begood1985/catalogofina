@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1795098937500,
+      "tag": "0000_catalog_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795098973694,
+      "tag": "0001_product_media_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795099511188,
+      "tag": "0002_drafts_refs_price_tiers",
+      "breakpoints": true
+    }
+  ]
+}
