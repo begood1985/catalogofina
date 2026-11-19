@@ -5,6 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { computeQuote, type DiscountTier, type PriceTier, type PricingProduct } from "./pricing";
 import { fallbackCatalog } from "./fallback-catalog";
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "./supabase-public-config";
+import { FINASUB_WHATSAPP } from "./whatsapp";
 
 function publicClient() {
   const url = process.env["SUPABASE_URL"] || PUBLIC_SUPABASE_URL;
@@ -69,7 +70,7 @@ export const getCatalog = createServerFn({ method: "GET" }).handler(async () => 
     settings: {
       brand_name: settings.data?.brand_name ?? "FinaSub",
       tagline: settings.data?.tagline ?? "",
-      whatsapp_phone: settings.data?.whatsapp_phone ?? "",
+      whatsapp_phone: FINASUB_WHATSAPP,
       min_order_value: Number(settings.data?.min_order_value ?? 250),
       payment_methods: settings.data?.payment_methods ?? [],
     },
@@ -215,5 +216,5 @@ export const getQuote = createServerFn({ method: "GET" })
       .eq("id", data.id)
       .maybeSingle();
     const { data: s } = await supabaseAdmin.from("store_settings").select("brand_name, whatsapp_phone").eq("id", 1).single();
-    return { order, brandName: s?.brand_name ?? "FinaSub", whatsapp: s?.whatsapp_phone ?? "" };
+    return { order, brandName: s?.brand_name ?? "FinaSub", whatsapp: FINASUB_WHATSAPP };
   });

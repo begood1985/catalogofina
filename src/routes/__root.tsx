@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CartProvider } from "../lib/cart";
+import { FloatingWhatsApp } from "../components/FloatingWhatsApp";
 import { Toaster } from "../components/ui/sonner";
 import { supabase } from "../integrations/supabase/client";
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from "../lib/supabase-public-config";
@@ -152,6 +153,7 @@ function RootComponent() {
       <CartProvider>
         <Outlet />
         <Toaster richColors position="top-center" />
+        <FloatingWhatsApp />
       </CartProvider>
     </QueryClientProvider>
   );
