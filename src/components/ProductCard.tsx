@@ -1,4 +1,5 @@
 import { Minus, Plus, Package } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { money, kg } from "@/lib/format";
 import { useCart } from "@/lib/cart";
@@ -6,6 +7,51 @@ import { nextTier, priceLine, type DiscountTier, type PriceTier } from "@/lib/pr
 import type { CatalogProduct } from "@/lib/catalog.functions";
 
 const illustrationPath = (name: string) => "/catalogo/ilustracoes/" + name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + ".svg";
+
+function ProductImage({ name, url }: { name: string; url: string | null }) {
+  // Use the registered product photo when it loads; fall back to a local
+  // illustration when the photo is missing, blocked or returns 404.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const [illustrationFailed, setIllustrationFailed] = useState(false);
+  const remoteUrl = url && failedUrl !== url ? url : null;
+  const illustration = illustrationPath(name);
+  return (
+    <div className="relative h-full w-full">
+      {remoteUrl ? (
+        <img
+          key={remoteUrl}
+          src={remoteUrl}
+          alt={name}
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-contain p-2"
+          onError={() => setFailedUrl(remoteUrl)}
+        />
+      ) : (
+        <>
+          {illustrationFailed ? (
+            <div className="flex h-full items-center justify-center bg-slate-50 text-slate-400" role="img" aria-label={`Produto: ${name}`}>
+              <Package className="h-16 w-16" />
+            </div>
+          ) : (
+            <img
+              key={illustration}
+              src={illustration}
+              alt={`Ilustração de ${name}`}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-contain p-2"
+              onError={() => setIllustrationFailed(true)}
+            />
+          )}
+          <span className="absolute bottom-2 right-2 rounded bg-white/90 px-2 py-1 text-[10px] text-slate-600">
+            Imagem ilustrativa
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
 
 export function ProductCard({ p, tiers, priceTiers = [], category }: { p: CatalogProduct; tiers: DiscountTier[]; priceTiers?: PriceTier[]; category?: string | undefined }) {
   const { items, setBoxes } = useCart();
@@ -20,11 +66,7 @@ export function ProductCard({ p, tiers, priceTiers = [], category }: { p: Catalo
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-transform hover:-translate-y-0.5">
       <div className="relative aspect-square bg-muted">
-        {p.image_url ? (
-          <img src={p.image_url} alt={p.name} loading="lazy" className="h-full w-full object-cover" />
-        ) : (
-          <><img src={illustrationPath(p.name)} alt={`Ilustração genérica: ${p.name}`} loading="lazy" className="h-full w-full object-contain" onError={(e) => { e.currentTarget.src = "/catalogo/ilustracoes/placeholder.svg"; }} /><span className="absolute bottom-2 right-2 rounded bg-white/90 px-2 py-1 text-[10px] text-slate-600">Imagem ilustrativa</span></>
-        )}
+        <ProductImage name={p.name} url={p.image_url} />
         <span className="absolute left-3 top-3 rounded-full bg-card/90 px-2.5 py-1 font-mono text-[11px] font-semibold">{p.sku}</span>
         {p.needs_review && <span className="absolute bottom-3 left-3 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-accent-foreground">Em revisão</span>}
         {out && <span className="absolute right-3 top-3 rounded-full bg-destructive px-2.5 py-1 text-[11px] font-semibold text-destructive-foreground">Sem estoque</span>}
