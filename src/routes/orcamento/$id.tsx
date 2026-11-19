@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 import { getQuote } from "@/lib/catalog.functions";
+import { trackLead } from "@/lib/meta-pixel";
 import { money, kg } from "@/lib/format";
 import { FINASUB_WHATSAPP, whatsappUrl } from "@/lib/whatsapp";
 
@@ -23,6 +24,10 @@ export const Route = createFileRoute("/orcamento/$id")({
 
 function Success() {
   const { order, brandName } = Route.useLoaderData();
+  useEffect(() => {
+    if (order) trackLead(order.id, Number(order.total) || undefined);
+  }, [order]);
+
   if (!order)
     return (
       <div className="grid min-h-screen place-items-center p-6 text-center">
