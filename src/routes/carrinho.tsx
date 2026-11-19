@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Trash2, ShoppingBag, Loader2 } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -14,6 +14,7 @@ import { quoteSchema, submitQuote } from "@/lib/catalog.functions";
 import { useCart } from "@/lib/cart";
 import { computeQuote } from "@/lib/pricing";
 import { money, kg } from "@/lib/format";
+import { getMetaConsent, META_CONSENT_EVENT, trackInitiateCheckout, trackLead } from "@/lib/meta-pixel";
 
 export const Route = createFileRoute("/carrinho")({
   head: () => ({
@@ -38,10 +39,29 @@ function CartPage() {
   const [form, setForm] = useState({ customerName: "", whatsapp: "", document: "", paymentMethod: "", notes: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  useEffect(() => {
+    const sync = () => setMarketingConsent(getMetaConsent() === "granted");
+    sync();
+    window.addEventListener(META_CONSENT_EVENT, sync);
+    return () => window.removeEventListener(META_CONSENT_EVENT, sync);
+  }, []);
 
   const byId = new Map(data.products.map((p) => [p.id, p]));
   const valid = items.filter((i) => byId.has(i.productId));
   const q = computeQuote(valid, data.products, data.tiers, data.settings.min_order_value, data.priceTiers);
+  const cartSignature = valid.map((item) => item.productId + ":" + item.boxes).sort().join("|");
+  useEffect(() => {
+    if (!marketingConsent || !cartSignature || data.offlineMode) return;
+    trackInitiateCheckout(
+      cartSignature,
+      q.lines.map((line) => ({
+        sku: byId.get(line.productId)?.sku ?? line.productId,
+        quantity: line.quantity,
+      })),
+      q.hasUnpriced ? undefined : q.total,
+    );
+  }, [marketingConsent, cartSignature, data.offlineMode, q.lines, q.hasUnpriced, q.total, byId]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +82,8 @@ function CartPage() {
     setSending(true);
     try {
       const res = await submit({ data: parsed.data });
+      // Orçamento só vira Lead depois da gravação confirmada; nunca é Purchase.
+      trackLead(res.id, q.hasUnpriced ? undefined : q.total);
       await navigate({ to: "/orcamento/$id", params: { id: res.id } });
       clear();
     } catch (err) {

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { CheckCircle2, MessageCircle } from "lucide-react";
 import { getQuote } from "@/lib/catalog.functions";
-import { trackLead } from "@/lib/meta-pixel";
+import { trackContact } from "@/lib/meta-pixel";
 import { money, kg } from "@/lib/format";
 import { FINASUB_WHATSAPP, whatsappUrl } from "@/lib/whatsapp";
 
@@ -24,10 +24,6 @@ export const Route = createFileRoute("/orcamento/$id")({
 
 function Success() {
   const { order, brandName } = Route.useLoaderData();
-  useEffect(() => {
-    if (order) trackLead(order.id, Number(order.total) || undefined);
-  }, [order]);
-
   if (!order)
     return (
       <div className="grid min-h-screen place-items-center p-6 text-center">
@@ -74,7 +70,7 @@ function Success() {
         {order.has_unpriced_items && <p className="mt-2 text-sm text-muted-foreground">Itens com preço sob consulta serão cotados pela equipe.</p>}
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           {link ? (
-            <a href={link} target="_blank" rel="noreferrer" className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-success px-5 py-3 font-semibold text-success-foreground">
+            <a href={link} target="_blank" rel="noreferrer" onClick={() => trackContact("quote_whatsapp")} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-success px-5 py-3 font-semibold text-success-foreground">
               <MessageCircle className="h-5 w-5" /> Abrir WhatsApp e enviar orçamento
             </a>
           ) : (

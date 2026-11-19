@@ -1,11 +1,12 @@
 import { Minus, Plus, Package } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { money, kg } from "@/lib/format";
 import { useCart } from "@/lib/cart";
 import { nextTier, priceLine, type DiscountTier, type PriceTier } from "@/lib/pricing";
 import type { CatalogProduct } from "@/lib/catalog.functions";
 import { productSlug, referencePhotos } from "@/lib/reference-photos";
+import { getMetaConsent, META_CONSENT_EVENT, trackAddToCart, trackViewContent } from "@/lib/meta-pixel";
 
 const illustrationPath = (name: string) => "/catalogo/ilustracoes/" + productSlug(name) + ".svg";
 
@@ -67,6 +68,29 @@ function ProductImage({ name, url }: { name: string; url: string | null }) {
 export function ProductCard({ p, tiers, priceTiers = [], category }: { p: CatalogProduct; tiers: DiscountTier[]; priceTiers?: PriceTier[]; category?: string | undefined }) {
   const { items, setBoxes } = useCart();
   const boxes = items.find((i) => i.productId === p.id)?.boxes ?? 0;
+  const cardRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const node = cardRef.current;
+    if (!node || typeof window === "undefined") return;
+    let observer: IntersectionObserver | null = null;
+    const observe = () => {
+      observer?.disconnect();
+      if (getMetaConsent() !== "granted" || typeof IntersectionObserver === "undefined") return;
+      observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          trackViewContent(p.sku, p.name);
+          observer?.disconnect();
+        }
+      }, { threshold: 0.55 });
+      observer.observe(node);
+    };
+    observe();
+    window.addEventListener(META_CONSENT_EVENT, observe);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener(META_CONSENT_EVENT, observe);
+    };
+  }, [p.sku, p.name]);
   const line = priceLine(p, Math.max(boxes, 1), tiers, priceTiers);
   const myTiers = priceTiers.filter((t) => t.product_id === p.id);
   const onRequest = p.retail_price == null && p.wholesale_price == null && myTiers.length === 0;
@@ -75,7 +99,7 @@ export function ProductCard({ p, tiers, priceTiers = [], category }: { p: Catalo
   const maxBoxes = p.stock != null ? Math.floor(p.stock / p.units_per_box) : 100000;
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-transform hover:-translate-y-0.5">
+    <article ref={cardRef} className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-transform hover:-translate-y-0.5">
       <div className="relative aspect-square bg-muted">
         <ProductImage name={p.name} url={p.image_url} />
         <span className="absolute left-3 top-3 rounded-full bg-card/90 px-2.5 py-1 font-mono text-[11px] font-semibold">{p.sku}</span>
@@ -131,7 +155,15 @@ export function ProductCard({ p, tiers, priceTiers = [], category }: { p: Catalo
             </p>
           )}
           {boxes === 0 ? (
-            <Button className="w-full" disabled={out} onClick={() => setBoxes(p.id, 1)}>
+            <Button className="w-full" disabled={out} onClick={() => {
+              setBoxes(p.id, 1);
+              const added = priceLine(p, 1, tiers, priceTiers);
+              trackAddToCart({
+                sku: p.sku,
+                quantity: added.quantity,
+                ...(added.priceOnRequest ? {} : { unitPrice: added.unitPrice }),
+              });
+            }}>
               {onRequest ? "Solicitar orçamento" : "Adicionar ao orçamento"}
             </Button>
           ) : (
