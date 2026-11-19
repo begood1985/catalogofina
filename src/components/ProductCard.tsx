@@ -1,9 +1,11 @@
-import { ImageOff, Minus, Plus, Package } from "lucide-react";
+import { Minus, Plus, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { money, kg } from "@/lib/format";
 import { useCart } from "@/lib/cart";
 import { nextTier, priceLine, type DiscountTier, type PriceTier } from "@/lib/pricing";
 import type { CatalogProduct } from "@/lib/catalog.functions";
+
+const illustrationPath = (name: string) => "/catalogo/ilustracoes/" + name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + ".svg";
 
 export function ProductCard({ p, tiers, priceTiers = [], category }: { p: CatalogProduct; tiers: DiscountTier[]; priceTiers?: PriceTier[]; category?: string | undefined }) {
   const { items, setBoxes } = useCart();
@@ -21,7 +23,7 @@ export function ProductCard({ p, tiers, priceTiers = [], category }: { p: Catalo
         {p.image_url ? (
           <img src={p.image_url} alt={p.name} loading="lazy" className="h-full w-full object-cover" />
         ) : (
-          <div className="grid h-full place-items-center text-muted-foreground"><ImageOff className="h-8 w-8" /></div>
+          <><img src={illustrationPath(p.name)} alt={`Ilustração genérica: ${p.name}`} loading="lazy" className="h-full w-full object-contain" onError={(e) => { e.currentTarget.src = "/catalogo/ilustracoes/placeholder.svg"; }} /><span className="absolute bottom-2 right-2 rounded bg-white/90 px-2 py-1 text-[10px] text-slate-600">Imagem ilustrativa</span></>
         )}
         <span className="absolute left-3 top-3 rounded-full bg-card/90 px-2.5 py-1 font-mono text-[11px] font-semibold">{p.sku}</span>
         {p.needs_review && <span className="absolute bottom-3 left-3 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-accent-foreground">Em revisão</span>}
