@@ -45,24 +45,11 @@ function Success() {
     order.notes ? `Obs.: ${order.notes}` : null,
   ].filter((l) => l !== null).join("\n");
   const link = whatsappUrl(text);
-  // Após um orçamento efetivamente registrado, direcionar o cliente à
-  // conversa comercial. Nunca fazer isso para orçamento não encontrado.
-  // Guardar o ID na sessão evita ciclos de redirecionamento ao voltar.
-  useEffect(() => {
-    if (!order || typeof window === "undefined") return;
-    const key = `finasub-whatsapp-opened-${order.id}`;
-    try {
-      if (window.sessionStorage.getItem(key)) return;
-      window.sessionStorage.setItem(key, "1");
-      const timer = window.setTimeout(() => window.location.assign(link), 900);
-      return () => window.clearTimeout(timer);
-    } catch {
-      // A opção de envio manual permanece disponível se o navegador bloquear.
-    }
-  }, [order?.id, link]);
+
 
   return (
     <div className="min-h-screen bg-ink px-4 py-12">
+      <AutoRedirectWhatsapp orderId={order.id} link={link} />
       <div className="mx-auto max-w-2xl rounded-3xl bg-card p-6 shadow-card md:p-10">
         <CheckCircle2 className="h-12 w-12 text-success" />
         <h1 className="mt-4 text-3xl font-extrabold">Orçamento registrado!</h1>
@@ -93,4 +80,22 @@ function Success() {
       </div>
     </div>
   );
+}
+function AutoRedirectWhatsapp({ orderId, link }: { orderId: string; link: string }) {
+  // Após um orçamento efetivamente registrado, direcionar o cliente à
+  // conversa comercial. Nunca fazer isso para orçamento não encontrado.
+  // Guardar o ID na sessão evita ciclos de redirecionamento ao voltar.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const key = `finasub-whatsapp-opened-${orderId}`;
+    try {
+      if (window.sessionStorage.getItem(key)) return;
+      window.sessionStorage.setItem(key, "1");
+      const timer = window.setTimeout(() => window.location.assign(link), 900);
+      return () => window.clearTimeout(timer);
+    } catch {
+      // A opção de envio manual permanece disponível se o navegador bloquear.
+    }
+  }, [orderId, link]);
+  return null;
 }
