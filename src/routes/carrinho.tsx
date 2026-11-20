@@ -166,7 +166,8 @@ function CartPage() {
               </div>
 
               <form onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-card" noValidate>
-                <h2 className="text-lg font-bold">Seus dados</h2>
+                <h2 className="text-lg font-bold">Finalize seu orçamento</h2>
+                <p className="text-xs text-muted-foreground">Preencha os dados para registrar o pedido de orçamento e abrir o resumo no WhatsApp.</p>
                 <F label="Nome ou razão social *" error={errors["customerName"]}><Input {...field("customerName")} maxLength={150} /></F>
                 <F label="WhatsApp com DDD *" error={errors["whatsapp"]}><Input {...field("whatsapp")} inputMode="tel" placeholder="(11) 90000-0000" maxLength={20} /></F>
                 <F label="CPF/CNPJ (opcional)" error={errors["document"]}><Input {...field("document")} inputMode="numeric" maxLength={20} /></F>
@@ -178,7 +179,7 @@ function CartPage() {
                 </F>
                 <F label="Observações" error={errors["notes"]}><Textarea {...field("notes")} maxLength={1000} rows={3} /></F>
                 <Button type="submit" size="lg" className="w-full" disabled={sending || !q.meetsMinimum}>
-                  {sending && <Loader2 className="animate-spin" />} Enviar orçamento
+                  {sending && <Loader2 className="animate-spin" />} Registrar e abrir WhatsApp
                 </Button>
                 <p className="text-center text-xs text-muted-foreground">Os valores são confirmados no envio conforme a tabela vigente.</p>
               </form>

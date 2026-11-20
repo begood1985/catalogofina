@@ -97,6 +97,17 @@ export function ProductCard({ p, tiers, priceTiers = [], category }: { p: Catalo
   const next = nextTier(p.id, line.quantity, tiers);
   const out = p.stock === 0;
   const maxBoxes = p.stock != null ? Math.floor(p.stock / p.units_per_box) : 100000;
+  const compareQuantities = [1, 5, 10];
+  const compared = compareQuantities.map((count) => ({
+    count,
+    price: priceLine(p, count, tiers, priceTiers),
+  }));
+  const first = compared[0]?.price;
+  const savings = first && !first.priceOnRequest ? compared.map((entry) => ({
+    count: entry.count,
+    amount: entry.price.priceOnRequest ? 0 : Math.max(0, Math.round((first.unitPrice - entry.price.unitPrice) * entry.price.quantity * 100) / 100),
+  })) : [];
+  const hasVolumeSavings = savings.some((entry) => entry.amount > 0);
 
   return (
     <article ref={cardRef} className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-transform hover:-translate-y-0.5">
@@ -129,6 +140,21 @@ export function ProductCard({ p, tiers, priceTiers = [], category }: { p: Catalo
             <p className="font-bold text-secondary-foreground">{p.wholesale_price != null ? money(p.wholesale_price) : "—"}</p>
           </div>
         </div>
+        )}
+        {!onRequest && (
+          <div className="rounded-lg border border-border bg-background px-3 py-2 text-xs" aria-label="Comparativo de valores por caixa">
+            <p className="mb-2 font-bold text-foreground">Compare por quantidade</p>
+            <div className="grid grid-cols-3 gap-1 text-center">
+              {compared.map(({ count, price }) => (
+                <div key={count} className="rounded-md bg-muted/60 p-1.5">
+                  <p className="font-semibold">{count} {count === 1 ? "caixa" : "caixas"}</p>
+                  <p className="mt-1 font-bold">{price.priceOnRequest ? "Consultar" : money(price.unitPrice) + "/un"}</p>
+                  <p className="text-[10px] text-muted-foreground">{price.priceOnRequest ? "Sob consulta" : money(price.lineTotal) + " total"}</p>
+                </div>
+              ))}
+            </div>
+            {hasVolumeSavings && <p className="mt-2 text-emerald-700">Economia calculada conforme as faixas cadastradas no produto.</p>}
+          </div>
         )}
         {myTiers.length > 0 && (
           <ul className="space-y-0.5 rounded-lg bg-muted px-3 py-2 text-xs">

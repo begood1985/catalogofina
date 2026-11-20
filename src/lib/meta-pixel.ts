@@ -2,7 +2,7 @@
  * Meta Pixel — FinaSub (somente navegador e consentimento explícito de marketing).
  * Nunca enviar nome, telefone, CPF, e-mail, texto do orçamento ou dados da sessão.
  */
-export const META_PIXEL_ID = "906093145230922";
+export const META_PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID ?? "").trim();
 export const META_CONSENT_KEY = "finasub-meta-marketing-consent-v1";
 export const META_CONSENT_EVENT = "finasub-meta-consent-changed";
 export type MetaConsent = "granted" | "denied" | null;
@@ -34,7 +34,7 @@ export function getMetaConsent(): MetaConsent {
 }
 
 export function initMetaPixel(): void {
-  if (typeof window === "undefined" || getMetaConsent() !== "granted" || window.fbq) return;
+  if (typeof window === "undefined" || !/^\d{10,20}$/.test(META_PIXEL_ID) || getMetaConsent() !== "granted" || window.fbq) return;
   const fbq: Fbq = function (...args: unknown[]) {
     if (fbq.callMethod) fbq.callMethod(...args);
     else fbq.queue!.push(args);

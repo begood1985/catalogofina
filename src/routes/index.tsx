@@ -51,16 +51,27 @@ function Catalog() {
       <section className="relative overflow-hidden bg-ink text-primary-foreground">
         <div className="absolute inset-0 dye-stripes" aria-hidden />
         <div className="relative mx-auto max-w-7xl px-4 py-12 md:py-16">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] opacity-80">Atacado de sublimação</p>
-          <h1 className="mt-2 max-w-2xl text-4xl font-extrabold leading-[1.05] md:text-6xl">
-            {data.settings.tagline || "Insumos para quem produz em escala"}
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] opacity-80">FinaSub · Orçamento para empresas e revendedores</p>
+          <h1 className="mt-2 max-w-3xl text-4xl font-extrabold leading-[1.05] md:text-6xl">
+            Canecas para sublimação no atacado
           </h1>
-          <p className="mt-4 max-w-xl opacity-85">
-            Preço de varejo e de atacado lado a lado, descontos progressivos por quantidade e orçamento enviado direto pelo WhatsApp.
+          <p className="mt-4 max-w-2xl text-base opacity-90 md:text-lg">
+            Compare o valor por caixa, escolha as quantidades e monte seu orçamento online.
+            Valores de atacado e descontos são aplicados conforme a tabela de cada produto.
           </p>
-          <p className="mt-6 inline-flex rounded-full bg-primary-foreground/15 px-4 py-2 text-sm font-semibold">
-            Pedido mínimo: {money(data.settings.min_order_value)}
-          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <a href="#produtos" className="rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-900 shadow-sm hover:bg-white/90">
+              Ver produtos e montar orçamento
+            </a>
+            <Link to="/carrinho" className="rounded-full border border-white/70 px-6 py-3 text-sm font-semibold hover:bg-white/10">
+              Meu orçamento
+            </Link>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2 text-sm">
+            <span className="rounded-full bg-primary-foreground/15 px-3 py-2">Pedido mínimo: {money(data.settings.min_order_value)}</span>
+            <span className="rounded-full bg-primary-foreground/15 px-3 py-2">Quantidade por caixa em cada produto</span>
+            <span className="rounded-full bg-primary-foreground/15 px-3 py-2">Atendimento pelo WhatsApp</span>
+          </div>
         </div>
       </section>
 
@@ -92,7 +103,7 @@ function Catalog() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main id="produtos" className="mx-auto max-w-7xl scroll-mt-36 px-4 py-8">
         {data.offlineMode && (
           <div role="status" className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
             <strong>Catálogo em demonstração.</strong> Fotos ilustrativas, produtos sob consulta e orçamentos temporariamente indisponíveis até a conexão com o banco de dados.
@@ -126,8 +137,21 @@ function Catalog() {
         )}
       </main>
       <CartBar />
-      <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
-        {data.settings.brand_name} · <Link to="/admin" className="underline">Área administrativa</Link>
+      <footer className="border-t border-border bg-card py-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 text-sm md:flex-row md:justify-between">
+          <div>
+            <p className="font-bold">{data.settings.brand_name} · Atendimento comercial</p>
+            <p className="mt-1 text-muted-foreground">Escolha produtos, quantidades e solicite uma cotação pelo WhatsApp.</p>
+            <p className="mt-1 text-muted-foreground">Entrega, frete e prazo são confirmados no atendimento conforme destino e pedido.</p>
+          </div>
+          <div className="flex flex-col gap-2 md:items-end">
+            <a href="https://wa.me/554491881664?text=Ol%C3%A1%21%20Quero%20um%20or%C3%A7amento%20de%20canecas%20para%20sublima%C3%A7%C3%A3o." target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline">
+              Atendimento: +55 44 9188-1664
+            </a>
+            <p className="text-xs text-muted-foreground">Formas de pagamento: {data.settings.payment_methods.length ? data.settings.payment_methods.join(" · ") : "sob consulta"}</p>
+            <Link to="/admin" className="text-xs text-muted-foreground underline">Área administrativa</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );
