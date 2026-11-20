@@ -4,12 +4,15 @@ import { catalogQuery } from "@/lib/catalog-query";
 import { useCart } from "@/lib/cart";
 import { computeQuote } from "@/lib/pricing";
 import { money } from "@/lib/format";
+import { quickQuoteLink } from "@/lib/quick-quote";
+import { trackContact } from "@/lib/meta-pixel";
 
 export function CartBar() {
   const { items } = useCart();
   const { data } = useQuery(catalogQuery);
   if (!data || items.length === 0) return null;
   const q = computeQuote(items, data.products, data.tiers, data.settings.min_order_value, data.priceTiers);
+  const quickLink = quickQuoteLink(items, data.products, data.tiers, data.priceTiers);
   const pct = Math.min(100, q.minOrderValue ? (q.total / q.minOrderValue) * 100 : 100);
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur">
@@ -23,7 +26,15 @@ export function CartBar() {
             {q.hasUnpriced ? "Inclui itens com preço sob consulta" : q.meetsMinimum ? "Pedido mínimo atingido" : `Faltam ${money(q.missingForMinimum)} para o pedido mínimo`}
           </p>
         </div>
-        <Link to="/carrinho" className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">Ver orçamento</Link>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Link to="/carrinho" className="rounded-full bg-primary px-4 py-2.5 text-center text-xs font-semibold text-primary-foreground sm:text-sm">Ver orçamento</Link>
+          {quickLink && (
+            <a href={quickLink} target="_blank" rel="noopener noreferrer" onClick={() => trackContact("quick_quote")}
+              className="rounded-full border border-emerald-700 px-4 py-2.5 text-center text-xs font-semibold text-emerald-800 sm:text-sm">
+              Cotar no WhatsApp
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );

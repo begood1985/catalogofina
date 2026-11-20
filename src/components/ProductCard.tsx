@@ -141,26 +141,6 @@ export function ProductCard({ p, tiers, priceTiers = [], category }: { p: Catalo
           </div>
         </div>
         )}
-        {!onRequest && (
-          <div className="rounded-lg border border-border bg-background px-3 py-2 text-xs" aria-label="Comparativo de valores por caixa">
-            <p className="mb-2 font-bold text-foreground">Compare por quantidade</p>
-            <div className="grid grid-cols-3 gap-1 text-center">
-              {compared.map(({ count, price }) => (
-                <div key={count} className="rounded-md bg-muted/60 p-1.5">
-                  <p className="font-semibold">{count} {count === 1 ? "caixa" : "caixas"}</p>
-                  <p className="mt-1 font-bold">{price.priceOnRequest ? "Consultar" : money(price.unitPrice) + "/un"}</p>
-                  <p className="text-[10px] text-muted-foreground">{price.priceOnRequest ? "Sob consulta" : money(price.lineTotal) + " total"}</p>
-                </div>
-              ))}
-            </div>
-            {hasVolumeSavings && <p className="mt-2 text-emerald-700">Economia calculada conforme as faixas cadastradas no produto.</p>}
-          </div>
-        )}
-        {myTiers.length > 0 && (
-          <ul className="space-y-0.5 rounded-lg bg-muted px-3 py-2 text-xs">
-            {myTiers.map((t) => <li key={t.min_qty} className="flex justify-between"><span>a partir de {t.min_qty} un</span><b>{money(t.unit_price)}/un</b></li>)}
-          </ul>
-        )}
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1"><Package className="h-3.5 w-3.5" />{p.units_per_box} un/caixa</span>
           {p.weight_kg != null && <span>{kg(p.weight_kg)}/un</span>}
@@ -211,6 +191,21 @@ export function ProductCard({ p, tiers, priceTiers = [], category }: { p: Catalo
           )}
           {boxes > 0 && <p className="text-center text-[11px] text-muted-foreground">{boxes} {boxes === 1 ? "caixa" : "caixas"}</p>}
         </div>
+        {!onRequest && (
+          <details className="rounded-lg border border-border px-3 py-2 text-xs">
+            <summary className="cursor-pointer font-semibold text-primary">Ver economia: 1, 5 ou 10 caixas</summary>
+            <div className="mt-3 grid grid-cols-3 gap-1 text-center">
+              {compared.map(({ count, price }) => (
+                <div key={count} className="rounded-md bg-muted/60 p-1.5">
+                  <p className="font-semibold">{count} {count === 1 ? "caixa" : "caixas"}</p>
+                  <p className="mt-1 font-bold">{price.priceOnRequest ? "Consultar" : money(price.unitPrice) + "/un"}</p>
+                  <p className="text-[10px] text-muted-foreground">{price.priceOnRequest ? "Sob consulta" : money(price.lineTotal) + " total"}</p>
+                </div>
+              ))}
+            </div>
+            {hasVolumeSavings && <p className="mt-2 text-emerald-700">Os valores refletem as faixas cadastradas.</p>}
+          </details>
+        )}
       </div>
     </article>
   );

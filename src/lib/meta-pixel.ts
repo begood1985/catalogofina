@@ -149,6 +149,6 @@ export function trackLead(quoteId: string, amount?: number): void {
 }
 
 /** Contact representa clique humano em WhatsApp, nunca abertura automática. */
-export function trackContact(source: "floating_whatsapp" | "quote_whatsapp"): void {
+export function trackContact(source: "floating_whatsapp" | "quote_whatsapp" | "quick_quote"): void {
   fire("Contact", { content_name: "WhatsApp FinaSub", contact_source: source });
 }

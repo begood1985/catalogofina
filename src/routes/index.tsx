@@ -50,16 +50,16 @@ function Catalog() {
       <SiteHeader brand={data.settings.brand_name} />
       <section className="relative overflow-hidden bg-ink text-primary-foreground">
         <div className="absolute inset-0 dye-stripes" aria-hidden />
-        <div className="relative mx-auto max-w-7xl px-4 py-12 md:py-16">
+        <div className="relative mx-auto max-w-7xl px-4 py-8 md:py-14">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] opacity-80">FinaSub · Orçamento para empresas e revendedores</p>
-          <h1 className="mt-2 max-w-3xl text-4xl font-extrabold leading-[1.05] md:text-6xl">
+          <h1 className="mt-2 max-w-3xl text-3xl font-extrabold leading-[1.08] sm:text-4xl md:text-6xl">
             Canecas para sublimação no atacado
           </h1>
-          <p className="mt-4 max-w-2xl text-base opacity-90 md:text-lg">
+          <p className="mt-3 max-w-2xl text-sm opacity-90 sm:text-base md:text-lg">
             Compare o valor por caixa, escolha as quantidades e monte seu orçamento online.
             Valores de atacado e descontos são aplicados conforme a tabela de cada produto.
           </p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center gap-3">
             <a href="#produtos" className="rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-900 shadow-sm hover:bg-white/90">
               Ver produtos e montar orçamento
             </a>
@@ -67,7 +67,7 @@ function Catalog() {
               Meu orçamento
             </Link>
           </div>
-          <div className="mt-5 flex flex-wrap gap-2 text-sm">
+          <div className="mt-4 flex flex-wrap gap-2 text-xs sm:text-sm">
             <span className="rounded-full bg-primary-foreground/15 px-3 py-2">Pedido mínimo: {money(data.settings.min_order_value)}</span>
             <span className="rounded-full bg-primary-foreground/15 px-3 py-2">Quantidade por caixa em cada produto</span>
             <span className="rounded-full bg-primary-foreground/15 px-3 py-2">Atendimento pelo WhatsApp</span>

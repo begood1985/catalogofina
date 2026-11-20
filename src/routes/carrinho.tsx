@@ -14,7 +14,8 @@ import { quoteSchema, submitQuote } from "@/lib/catalog.functions";
 import { useCart } from "@/lib/cart";
 import { computeQuote } from "@/lib/pricing";
 import { money, kg } from "@/lib/format";
-import { getMetaConsent, META_CONSENT_EVENT, trackInitiateCheckout, trackLead } from "@/lib/meta-pixel";
+import { getMetaConsent, META_CONSENT_EVENT, trackInitiateCheckout, trackLead, trackContact } from "@/lib/meta-pixel";
+import { quickQuoteLink } from "@/lib/quick-quote";
 
 export const Route = createFileRoute("/carrinho")({
   head: () => ({
@@ -50,6 +51,7 @@ function CartPage() {
   const byId = new Map(data.products.map((p) => [p.id, p]));
   const valid = items.filter((i) => byId.has(i.productId));
   const q = computeQuote(valid, data.products, data.tiers, data.settings.min_order_value, data.priceTiers);
+  const quickLink = quickQuoteLink(valid, data.products, data.tiers, data.priceTiers, form.customerName);
   const cartSignature = valid.map((item) => item.productId + ":" + item.boxes).sort().join("|");
   useEffect(() => {
     if (!marketingConsent || !cartSignature || data.offlineMode) return;
@@ -160,7 +162,7 @@ function CartPage() {
                 )}
                 {!q.meetsMinimum && (
                   <p className="mt-3 rounded-lg bg-accent/15 p-3 text-sm">
-                    Pedido mínimo de {money(q.minOrderValue)}. Faltam <b>{money(q.missingForMinimum)}</b>.
+                    Pedido mínimo para registro online: {money(q.minOrderValue)}. Faltam <b>{money(q.missingForMinimum)}</b>. Para consultar quantidades menores, use o WhatsApp.
                   </p>
                 )}
               </div>
@@ -181,6 +183,20 @@ function CartPage() {
                 <Button type="submit" size="lg" className="w-full" disabled={sending || !q.meetsMinimum}>
                   {sending && <Loader2 className="animate-spin" />} Registrar e abrir WhatsApp
                 </Button>
+                {quickLink && (
+                  <a
+                    href={quickLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackContact("quick_quote")}
+                    className="flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-emerald-600 px-4 py-2.5 text-center text-sm font-bold text-emerald-800 hover:bg-emerald-50"
+                  >
+                    Pedir cotação rápida pelo WhatsApp
+                  </a>
+                )}
+                <p className="text-center text-xs text-muted-foreground">
+                  Sem preencher o formulário e mesmo abaixo do pedido mínimo, você pode consultar preços e frete com a equipe. Esta conversa não registra um pedido no sistema.
+                </p>
                 <p className="text-center text-xs text-muted-foreground">Os valores são confirmados no envio conforme a tabela vigente.</p>
               </form>
             </aside>
